@@ -282,7 +282,8 @@ class StepDecay():
         alpha = self.initAlpha * (self.factor ** exp)
 
         # return the learning rate
-        print(" Learning Rate: " + str(float(alpha)))
+        print(" Learning Rate: {}".format(float(alpha)))
+        tf.summary.scalar('learning rate', data=float(alpha))
         return float(alpha)
 
 
@@ -313,6 +314,13 @@ class ImageSaver(tf.keras.callbacks.Callback):
                                        msk=sample_msk.numpy()[0, :])
             with self.file_writer.as_default():
                 tf.summary.image('Training data', image, step=i)
+
+class MetricLogger(tf.keras.callbacks.Callback):
+    def __init__(self):
+        super().__init__()
+
+    def on_epoch_begin(self, epoch, logs=None):
+        pass
 
 
 def display(image, mask, prediction=None):
