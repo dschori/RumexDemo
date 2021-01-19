@@ -1,5 +1,34 @@
 # Rumex Demo
 
+## Data
+
+**Structure:**
+
+Data has to be place like:
+```
+RumexDemo
+│
+└───images
+│   │   img_1000.png
+│   │   img_1001.png
+│   │   ...
+│   
+└───masks
+│   │   msk_1000.png
+│   │   msk_1001.png
+│   │   ...
+```
+
+## Training
+
+### Config
+
+Configs can be made in [config.py](config.py)
+
+## Inference
+
+TODO...
+
 ## Docker Commands
 
 **Build:**  

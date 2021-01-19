@@ -22,15 +22,14 @@ class ImageViewer():
         return msk
 
     def get_pair(self, index):
-        img_path = '{}/images/img_{}.png'.format(Config.folder_path, index)
+        img_path = '{}/images_old/img_{}.png'.format(Config.folder_path, index)
         msk_path = '{}/masks/img_{}.png'.format(Config.folder_path, index)
         img, msk = self.get_image(img_path), self.get_mask(msk_path)
         return img, msk
 
-    def get_overlaid_pair(self, index, alpha=0.4):
-        img, msk = self.get_pair(index)
-        img = img.astype(dtype=np.float) / 255.
-        msk = msk.astype(dtype=np.float) / 255.
+    def make_overlay(self, img, msk, alpha=0.4):
+        img = img.astype(dtype=np.float)
+        msk = msk.astype(dtype=np.float)
 
         msk *= alpha
 
@@ -42,8 +41,13 @@ class ImageViewer():
         out = overlay * msk + img * (1.0 - msk)
         return out
 
-    def show_pair(self, index, alpha=0.4):
-        overlay = self.get_overlaid_pair(index=index, alpha=alpha)
+    def get_overlaid_pair(self, index, alpha=0.4):
+        img, msk = self.get_pair(index)
+        overlay = self.make_overlay(img=img, msk=msk, alpha=alpha)
+        return overlay
+
+    def show_pair(self, img, msk, alpha=0.4):
+        overlay = self.make_overlay(img=img, msk=msk)
         plt.imshow(overlay)
         plt.show()
 
@@ -65,7 +69,7 @@ def get_dataset(image_list, mask_list, do_augmentations=False):
         dataset = dataset.map(func, num_parallel_calls=Config.tf_parallel_calls)
 
     if do_augmentations:
-        for func in [random_brightness, random_flip, add_gaussian_noise, write_file]:
+        for func in [random_brightness, random_flip, add_gaussian_noise]:
             dataset = dataset.map(func, num_parallel_calls=Config.tf_parallel_calls)
 
     for func in [mask_to_grayscale]:
@@ -85,9 +89,6 @@ def slice_image():
 
 
 def write_file(image, mask, image_path):
-    #img = tf.io.encode_jpeg(image=tf.image.convert_image_dtype(image, tf.uint8), format='rgb')
-    #tf.io.write_file('test.png', img)
-
     tmp_mask = tf.math.multiply(mask, tf.constant(0.4))
 
     # make overlay
@@ -100,13 +101,13 @@ def write_file(image, mask, image_path):
     out = tf.math.add(tf.math.multiply(overlay, tmp_mask), tf.math.multiply(image, tf.math.subtract(tf.constant(1.0), tmp_mask)))
     out = tf.io.encode_jpeg(image=tf.image.convert_image_dtype(out, tf.uint8), format='rgb')
     #tf.print(image_path)
-    tf.io.write_file('test.png', out)
+    tf.io.write_file('../test.png', out)
 
     return image, mask, image_path
 
 
 def process_path(image_path, mask_path):
-    """ Reads images and masks based on their file paths. Has to be applied with tf.data.Dataset.map function
+    """ Reads images_old and masks based on their file paths. Has to be applied with tf.data.Dataset.map function
         Args:
         image_path: image path as string
         mask_path: mask path as string
@@ -117,6 +118,8 @@ def process_path(image_path, mask_path):
     msk = tf.io.read_file(mask_path)
     img = decode_img(img, output_type='rgb')
     msk = decode_img(msk, output_type='rgb')
+    img = tf.image.resize(img, [600, 2900])
+    msk = tf.image.resize(msk, [600, 2900])
     return img, msk, image_path
 
 
@@ -144,11 +147,11 @@ def mask_to_grayscale(image, mask, image_path):
 
 
 def random_flip(image, mask, image_path):
-    """ Random flip images and masks. Has to be applied with tf.data.Dataset.map function
+    """ Random flip images_old and masks. Has to be applied with tf.data.Dataset.map function
         Args:
         image: image as [heigth, width, channels]
         mask: mask as [heigth, width, channels]
-        image_path: Path of image files. used to map images afterwards
+        image_path: Path of image files. used to map images_old afterwards
         Returns:
         image, mask, image_path
     """
@@ -164,11 +167,11 @@ def random_flip(image, mask, image_path):
 
 
 def random_crop(image, mask, image_path):
-    """ Random crops images and masks. Has to be applied with tf.data.Dataset.map function
+    """ Random crops images_old and masks. Has to be applied with tf.data.Dataset.map function
         Args:
         image: image as [heigth, width, channels]
         mask: mask as [heigth, width, channels]
-        image_path: Path of image files. used to map images afterwards
+        image_path: Path of image files. used to map images_old afterwards
         Returns:
         image, mask, image_path
     """
@@ -178,11 +181,11 @@ def random_crop(image, mask, image_path):
 
 
 def random_brightness(image, mask, image_path):
-    """ Adds random brightness to images. Has to be applied with tf.data.Dataset.map function
+    """ Adds random brightness to images_old. Has to be applied with tf.data.Dataset.map function
         Args:
         image: image as [heigth, width, channels]
         mask: mask as [heigth, width, channels]
-        image_path: Path of image files. used to map images afterwards
+        image_path: Path of image files. used to map images_old afterwards
         Returns:
         image, mask, image_path
     """
@@ -192,11 +195,11 @@ def random_brightness(image, mask, image_path):
 
 
 def central_crop(image, mask, image_path):
-    """ Central Crops the images and masks with 64px border. Has to be applied with tf.data.Dataset.map function
+    """ Central Crops the images_old and masks with 64px border. Has to be applied with tf.data.Dataset.map function
         Args:
         image: image as [heigth, width, channels]
         mask: mask as [heigth, width, channels]
-        image_path: Path of image files. used to map images afterwards
+        image_path: Path of image files. used to map images_old afterwards
         Returns:
         image, mask, image_path
     """
@@ -206,11 +209,11 @@ def central_crop(image, mask, image_path):
 
 
 def add_gaussian_noise(image, mask, image_path):
-    """ Adds gaussion noise to images. Has to be applied with tf.data.Dataset.map function
+    """ Adds gaussion noise to images_old. Has to be applied with tf.data.Dataset.map function
         Args:
         image: image as [heigth, width, channels]
         mask: mask as [heigth, width, channels]
-        image_path: Path of image files. used to map images afterwards
+        image_path: Path of image files. used to map images_old afterwards
         Returns:
         image, mask, image_path
     """

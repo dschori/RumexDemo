@@ -5,10 +5,10 @@ class Config:
     smooth = 1e-5
     batch_size = 4
     train_epochs = 100
-    prefetch_size = 16
-    shuffle_size = 16
+    prefetch_size = 1
+    shuffle_size = 1
     folder_path = 'data'
-    backbone_name = 'vgg19'
+    backbone_name = 'resnet50'
     backbone_layer_names = {
         'vgg19': [
             'block2_conv2',

@@ -1,14 +1,12 @@
 import argparse
 import os
 import warnings
-import time
+
 import numpy as np
-import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
-from config import Config
-from dataset_utils import get_dataset
-from unet_utils import Train
+from utils.dataset_utils import get_dataset
+from utils.unet_utils import Train
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -21,8 +19,8 @@ parser = argparse.ArgumentParser(description='U-Net Trainer')
 
 # args = parser.parse_args()
 
-image_dir = 'data/images/'
-mask_dir = 'data/masks/'
+image_dir = 'data/imgs/'
+mask_dir = 'data/msks/'
 
 
 def create_subsets(image_list, mask_list, train_size=0.8):
@@ -52,10 +50,10 @@ val_set = get_dataset(image_list=val_image_list,
                       do_augmentations=False)
 
 output = list(train_set.take(1))[0]
-sample_img, sample_msk, img_path = output[0], output[1], output[2]
+sample_img, sample_msk = output[0], output[1]
 
-print(sample_img.shape)
-print(sample_msk.shape)
+print('Got images_old with shape: {}'.format(sample_img.shape))
+print('Got masks with shape: {}'.format(sample_msk.shape))
 
 trainer = Train(train_set=train_set, val_set=val_set)
 

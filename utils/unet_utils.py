@@ -1,10 +1,9 @@
 import tensorflow as tf
 from config import Config
-import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
-from dataset_utils import ImageViewer
+from utils.dataset_utils import ImageViewer
 
 
 class Model():
@@ -222,11 +221,11 @@ class Train(Model):
         self._learning_rate_schedule = tf.keras.callbacks.LearningRateScheduler(StepDecay(initAlpha=0.0002, factor=0.3,
                                                                                           dropEvery=20))
         self._model_checkpoint = tf.keras.callbacks.ModelCheckpoint('models/best_{}.h5'.format(Config.backbone_name),
-                                                      monitor='val_my_dice_metric_foreground',
-                                                      mode='max', save_best_only=True, verbose=1)
-        self._tensorboard_log = tf.keras.callbacks.TensorBoard(log_dir='logs', histogram_freq=1, write_graph=True,
-                                                 write_images=True, update_freq='epoch', profile_batch=2,
-                                                 embeddings_freq=1, embeddings_metadata=None)
+                                                                    monitor='val_my_dice_metric_foreground',
+                                                                    mode='max', save_best_only=True, verbose=1)
+        self._tensorboard_log = tf.keras.callbacks.TensorBoard(log_dir='../logs', histogram_freq=1, write_graph=True,
+                                                               write_images=True, update_freq='epoch', profile_batch=2,
+                                                               embeddings_freq=1, embeddings_metadata=None)
         self._image_saver = ImageSaver(train_set_copy=train_set, val_set_copy=val_set)
 
     def create_model(self, output_channels, backbone_name, backbone_trainable):
@@ -238,7 +237,7 @@ class Train(Model):
     def fit(self, train_set_size):
         model_history = self.model.fit(self.train_set.map(self.unindex).repeat(),
                                        epochs=Config.train_epochs,
-                                       steps_per_epoch=(train_set_size // Config.batch_size),
+                                       steps_per_epoch=1,
                                        validation_steps=None,
                                        validation_data=self.val_set.map(self.unindex),
                                        callbacks=[self._learning_rate_schedule,
@@ -315,6 +314,7 @@ class ImageSaver(tf.keras.callbacks.Callback):
             with self.file_writer.as_default():
                 tf.summary.image('Training data', image, step=i)
 
+
 class MetricLogger(tf.keras.callbacks.Callback):
     def __init__(self):
         super().__init__()
@@ -339,18 +339,3 @@ def display(image, mask, prediction=None):
         ax[2].set_title('prediction')
         ax[2].axis('off')
     plt.tight_layout()
-
-
-def show(dataset, model=None, rows=1, threshold=0.5):
-    for batch in dataset.shuffle(512).take(rows):
-        if model is None:
-            image, mask = batch[0][0], batch[1][0]
-            tmp_mask = mask.numpy().copy()
-            tmp_mask[:, :, 2] = 0
-            overlay = cv2.add(image.numpy().astype(float), np.multiply(tmp_mask, 0.5).astype(float))
-            overlay = np.clip(overlay, 0, 1)
-            display(image, mask, overlay)
-        else:
-            prediction = model.predict(batch[0]) > threshold
-            image, mask, prediction = batch[0][0], batch[1][0], prediction[0].astype(float)
-            display(image, mask, prediction)
