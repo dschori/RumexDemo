@@ -4,8 +4,8 @@ class Config:
     img_slice_width = 512
     smooth = 1e-5
     batch_size = 8
-    train_epochs = 100
-    prefetch_size = 32
+    train_epochs = 50
+    prefetch_size = 16
     shuffle_size = 256
     folder_path = 'data'
     backbone_name = 'resnet50'

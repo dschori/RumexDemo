@@ -77,7 +77,7 @@ def get_dataset(image_list, mask_list, do_augmentations=False):
         dataset = dataset.map(func, num_parallel_calls=Config.tf_parallel_calls)
 
     dataset = dataset.batch(Config.batch_size)
-    dataset = dataset.shuffle(Config.shuffle_size, reshuffle_each_iteration=True)
+    dataset = dataset.shuffle(Config.shuffle_size, reshuffle_each_iteration=False)
     return dataset
 
 
