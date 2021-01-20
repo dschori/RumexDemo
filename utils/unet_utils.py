@@ -60,7 +60,7 @@ class Model():
                  down_stack.get_layer(Config.backbone_layer_names[backbone_name][3]).output,
                  down_stack.get_layer(Config.backbone_layer_names[backbone_name][4]).output]
 
-        up_stack_filters = [16, 32, 64, 128]
+        up_stack_filters = [32, 64, 128, 256]
 
         x = skips[-1]
         skips = reversed(skips[:-1])
@@ -74,7 +74,10 @@ class Model():
         # x = simple_upblock_func(x, 32, 3, 'up_stack' + str(32))
         x = tf.keras.layers.UpSampling2D(2)(x)
         x = tf.keras.layers.Conv2D(32, 3, activation='relu', padding='same')(x)
-        x = tf.keras.layers.Conv2D(output_channels, 1, activation='softmax', padding='same', name='final_output')(x)
+        if output_channels == 1:
+            x = tf.keras.layers.Conv2D(output_channels, 1, activation='sigmoid', padding='same', name='final_output')(x)
+        else:
+            x = tf.keras.layers.Conv2D(output_channels, 1, activation='softmax', padding='same', name='final_output')(x)
 
         return tf.keras.Model(inputs=down_stack.layers[0].input, outputs=x)
 
@@ -197,7 +200,7 @@ class Model():
             x = x * class_weights
         return backend.mean(x)
 
-    def f_score(self, gt, pr, beta=1, class_weights=1, class_indexes=None, smooth=SMOOTH, per_image=False,
+    def f_score(self, gt, pr, beta=1, class_weights=1, class_indexes=None, smooth=Config.smooth, per_image=False,
                 threshold=None,
                 backend=tf.keras.backend, **kwargs):
         """
@@ -238,7 +241,7 @@ class Model():
             Returns:
             dice loss as tensor
         """
-        return 1 - self.f_score(gt, pr, class_weights=np.array([0.5, 0.5, 1.]), smooth=1.0)
+        return 1 - self.f_score(gt, pr, class_weights=1, smooth=1.0)
 
     def cce_loss(self, y_true, y_pred):
         """ Returns categorical crossentropy loss
@@ -261,6 +264,34 @@ class Model():
             combination of dice and categorical crossentropy loss as tensor
         """
         return dice_weight * self.dice_loss(gt, pr) + cce_weight * self.cce_loss(gt, pr)
+    
+    def dice_loss_new(self, y_true, y_pred):
+        return 1 - self.dice_score(y_true=y_true, y_pred=y_pred)
+
+    def jaccard_distance_loss(self, y_true, y_pred, smooth=100):
+        return (1 - self.jaccard_distance(y_true=y_true, y_pred=y_pred, smooth=smooth)) * smooth
+
+    def dice_score(self, y_true, y_pred, skip_background=False):
+        y_true = tf.cast(y_true, tf.float32)
+        y_pred = tf.math.sigmoid(y_pred)
+        numerator = 2 * tf.reduce_sum(y_true * y_pred)
+        denominator = tf.reduce_sum(y_true + y_pred)
+
+        return numerator / denominator
+
+    def jaccard_distance(self, y_true, y_pred, smooth=100):
+        """
+        Jaccard = (|X & Y|)/ (|X|+ |Y| - |X & Y|)
+                = sum(|A*B|)/(sum(|A|)+sum(|B|)-sum(|A*B|))
+        The jaccard distance loss is usefull for unbalanced datasets. This has been
+        shifted so it converges on 0 and is smoothed to avoid exploding or disapearing
+        gradient.
+        Ref: https://en.wikipedia.org/wiki/Jaccard_index
+        """
+        intersection = tf.math.reduce_sum(tf.abs(y_true * y_pred), axis=-1)
+        sum_ = tf.math.reduce_sum(tf.abs(y_true) + tf.abs(y_pred), axis=-1)
+        jac = (intersection + smooth) / (sum_ - intersection + smooth)
+        return jac
 
 
 class Train(Model):
@@ -269,7 +300,7 @@ class Train(Model):
         self.train_set = train_set
         self.val_set = val_set
         self.model = None
-        self._learning_rate_schedule = tf.keras.callbacks.LearningRateScheduler(StepDecay(initAlpha=0.0002, factor=0.3,
+        self._learning_rate_schedule = tf.keras.callbacks.LearningRateScheduler(StepDecay(initAlpha=Config.init_learning_rate, factor=0.3,
                                                                                           dropEvery=20))
         self._model_checkpoint = tf.keras.callbacks.ModelCheckpoint('models/best_{}.h5'.format(Config.backbone_name),
                                                                     monitor='val_my_dice_metric_all',
@@ -299,8 +330,8 @@ class Train(Model):
 
     def _compile_model(self):
         self.model.compile(optimizer=tf.keras.optimizers.Adam(),
-                           loss=self.dice_cce_loss,
-                           metrics=[self.dice_loss])
+                           loss=self.dice_loss_new,
+                           metrics=[self.my_dice_metric_all])
 
 
 class Predict(Model):

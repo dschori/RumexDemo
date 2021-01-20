@@ -69,7 +69,8 @@ def get_dataset(image_list, mask_list, do_augmentations=False):
         dataset = dataset.map(func, num_parallel_calls=Config.tf_parallel_calls)
 
     if do_augmentations:
-        for func in [random_brightness, random_flip, add_gaussian_noise]:
+        #for func in [random_brightness, random_flip, add_gaussian_noise]:
+        for func in [random_flip, random_brightness]:
             dataset = dataset.map(func, num_parallel_calls=Config.tf_parallel_calls)
 
     for func in [mask_to_grayscale]:
@@ -133,16 +134,18 @@ def decode_img(img_path, output_type='rgb'):
     output_types = ['rgb', 'grayscale']
     assert output_type in output_types, 'output_type has to be in {}'.format(output_type)
     # convert the compressed string to a 3D uint8 tensor
-    img = tf.image.decode_png(img_path, channels=3)
+    if output_type == 'grayscale':
+        img = tf.image.decode_png(img_path, channels=1)
+    else:
+        img = tf.image.decode_png(img_path, channels=3)
     # Use `convert_image_dtype` to convert to floats in the [0,1] range.
     img = tf.image.convert_image_dtype(img, tf.float32)
-    if output_type == 'grayscale':
-        img = tf.image.rgb_to_grayscale(img)
     return img
 
 
 def mask_to_grayscale(image, mask, image_path):
     mask = tf.image.rgb_to_grayscale(mask)
+    mask = tf.image.convert_image_dtype(mask, dtype=tf.float32)
     return image, mask, image_path
 
 
@@ -203,8 +206,8 @@ def central_crop(image, mask, image_path):
         Returns:
         image, mask, image_path
     """
-    image = image[64:-64, 64:-64]
-    mask = mask[64:-64, 64:-64]
+    image = image[0:512, 0:512]
+    mask = mask[0:512, 0:512]
     return image, mask, image_path
 
 
