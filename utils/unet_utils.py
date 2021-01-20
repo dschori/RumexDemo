@@ -237,7 +237,7 @@ class Train(Model):
     def fit(self, train_set_size):
         model_history = self.model.fit(self.train_set.map(self.unindex).repeat(),
                                        epochs=Config.train_epochs,
-                                       steps_per_epoch=1,
+                                       steps_per_epoch=(train_set_size // Config.batch_size)//2,
                                        validation_steps=None,
                                        validation_data=self.val_set.map(self.unindex),
                                        callbacks=[self._learning_rate_schedule,
