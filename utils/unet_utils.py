@@ -157,7 +157,7 @@ class Model():
             dice value as tensor
         """
         return tf.py_function(self.get_dice_score, [label > 0.5, pred > 0.5, False], tf.float32)
-    
+
     def gather_channels(self, *xs, indexes=None, **kwargs):
         """ Slice tensors along channels axis by given indexes
             Credits: https://github.com/qubvel/segmentation_models
@@ -167,30 +167,39 @@ class Model():
         elif isinstance(indexes, (int)):
             indexes = [indexes]
         xs = [_gather_channels(x, indexes=indexes, **kwargs) for x in xs]
-    return xs
-
+        return xs
 
     def get_reduce_axes(self, per_image, backend=tf.keras.backend, **kwargs):
-            """
+        """
                 Credits: https://github.com/qubvel/segmentation_models
             """
-            axes = [1, 2] if backend.image_data_format() == 'channels_last' else [2, 3]
-            if not per_image:
-                axes.insert(0, 0)
+        axes = [1, 2] if backend.image_data_format() == 'channels_last' else [2, 3]
+        if not per_image:
+            axes.insert(0, 0)
         return axes
 
-
     def round_if_needed(self, x, threshold, backend=tf.keras.backend, **kwargs):
-            """
-                Credits: https://github.com/qubvel/segmentation_models
-            """
-            if threshold is not None:
-                x = backend.greater(x, threshold)
-                x = backend.cast(x, backend.floatx())
+        """
+            Credits: https://github.com/qubvel/segmentation_models
+        """
+        if threshold is not None:
+            x = backend.greater(x, threshold)
+            x = backend.cast(x, backend.floatx())
         return x
 
-    def f_score(self, gt, pr, beta=1, class_weights=1, class_indexes=None, smooth=SMOOTH, per_image=False, threshold=None,
-            backend=tf.keras.backend, **kwargs):
+    def average(self, x, per_image=False, class_weights=None, backend=tf.keras.backend, **kwargs):
+        """
+            Credits: https://github.com/qubvel/segmentation_models
+        """
+        if per_image:
+            x = backend.mean(x, axis=0)
+        if class_weights is not None:
+            x = x * class_weights
+        return backend.mean(x)
+
+    def f_score(self, gt, pr, beta=1, class_weights=1, class_indexes=None, smooth=SMOOTH, per_image=False,
+                threshold=None,
+                backend=tf.keras.backend, **kwargs):
         """
             Args:
                 gt: ground truth 4D keras tensor (B, H, W, C) or (B, C, H, W)
@@ -217,10 +226,9 @@ class Model():
 
         score = ((1 + beta ** 2) * tp + smooth) \
                 / ((1 + beta ** 2) * tp + beta ** 2 * fn + fp + smooth)
-        score = average(score, per_image, class_weights, **kwargs)
+        score = self.average(score, per_image, class_weights, **kwargs)
 
         return score
-
 
     def dice_loss(self, gt, pr):
         """ Returns Dice Loss from f_score: 1-f_score
@@ -230,7 +238,7 @@ class Model():
             Returns:
             dice loss as tensor
         """
-        return 1 - f_score(gt, pr, class_weights=np.array([0.5, 0.5, 1.]), smooth=1.0)
+        return 1 - self.f_score(gt, pr, class_weights=np.array([0.5, 0.5, 1.]), smooth=1.0)
 
     def cce_loss(self, y_true, y_pred):
         """ Returns categorical crossentropy loss
