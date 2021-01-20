@@ -1,5 +1,5 @@
 class Config:
-    tf_parallel_calls = 12
+    tf_parallel_calls = 24
     img_slice_height = 512
     img_slice_width = 512
     smooth = 1e-5

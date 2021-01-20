@@ -138,30 +138,6 @@ class Model():
 
         return np.mean(metric)
 
-    def dice_score(self, y_true, y_pred, skip_background=False):
-        y_true = tf.cast(y_true, tf.float32)
-        y_pred = tf.math.sigmoid(y_pred)
-        numerator = 2 * tf.reduce_sum(y_true * y_pred)
-        denominator = tf.reduce_sum(y_true + y_pred)
-
-        return numerator / denominator
-
-    def jaccard_distance(self, y_true, y_pred, smooth=100):
-        """
-        Jaccard = (|X & Y|)/ (|X|+ |Y| - |X & Y|)
-                = sum(|A*B|)/(sum(|A|)+sum(|B|)-sum(|A*B|))
-
-        The jaccard distance loss is usefull for unbalanced datasets. This has been
-        shifted so it converges on 0 and is smoothed to avoid exploding or disapearing
-        gradient.
-
-        Ref: https://en.wikipedia.org/wiki/Jaccard_index
-        """
-        intersection = tf.math.reduce_sum(tf.abs(y_true * y_pred), axis=-1)
-        sum_ = tf.math.reduce_sum(tf.abs(y_true) + tf.abs(y_pred), axis=-1)
-        jac = (intersection + smooth) / (sum_ - intersection + smooth)
-        return jac
-
     def my_dice_metric_foreground(self, label, pred):
         """ Converts dice score metric to tensorflow graph, only hemp
             Args:
@@ -181,12 +157,80 @@ class Model():
             dice value as tensor
         """
         return tf.py_function(self.get_dice_score, [label > 0.5, pred > 0.5, False], tf.float32)
+    
+    def gather_channels(self, *xs, indexes=None, **kwargs):
+        """ Slice tensors along channels axis by given indexes
+            Credits: https://github.com/qubvel/segmentation_models
+        """
+        if indexes is None:
+            return xs
+        elif isinstance(indexes, (int)):
+            indexes = [indexes]
+        xs = [_gather_channels(x, indexes=indexes, **kwargs) for x in xs]
+    return xs
 
-    def dice_loss(self, y_true, y_pred):
-        return 1 - self.dice_loss(y_true=y_true, y_pred=y_pred)
 
-    def jaccard_distance_loss(self, y_true, y_pred, smooth=100):
-        return (1 - self.jaccard_distance(y_true=y_true, y_pred=y_pred, smooth=smooth)) * smooth
+    def get_reduce_axes(self, per_image, backend=tf.keras.backend, **kwargs):
+            """
+                Credits: https://github.com/qubvel/segmentation_models
+            """
+            axes = [1, 2] if backend.image_data_format() == 'channels_last' else [2, 3]
+            if not per_image:
+                axes.insert(0, 0)
+        return axes
+
+
+    def round_if_needed(self, x, threshold, backend=tf.keras.backend, **kwargs):
+            """
+                Credits: https://github.com/qubvel/segmentation_models
+            """
+            if threshold is not None:
+                x = backend.greater(x, threshold)
+                x = backend.cast(x, backend.floatx())
+        return x
+
+    def f_score(self, gt, pr, beta=1, class_weights=1, class_indexes=None, smooth=SMOOTH, per_image=False, threshold=None,
+            backend=tf.keras.backend, **kwargs):
+        """
+            Args:
+                gt: ground truth 4D keras tensor (B, H, W, C) or (B, C, H, W)
+                pr: prediction 4D keras tensor (B, H, W, C) or (B, C, H, W)
+                class_weights: 1. or list of class weights, len(weights) = C
+                class_indexes: Optional integer or list of integers, classes to consider, if ``None`` all classes are used.
+                beta: f-score coefficient
+                smooth: value to avoid division by zero
+                per_image: if ``True``, metric is calculated as mean over images in batch (B),
+                    else over whole batch
+                threshold: value to round predictions (use ``>`` comparison), if ``None`` prediction will not be round
+            Returns:
+                F-score in range [0, 1]
+            Credits: https://github.com/qubvel/segmentation_models
+            """
+        gt, pr = self.gather_channels(gt, pr, indexes=class_indexes, **kwargs)
+        pr = self.round_if_needed(pr, threshold, **kwargs)
+        axes = self.get_reduce_axes(per_image, **kwargs)
+
+        # calculate score
+        tp = backend.sum(gt * pr, axis=axes)
+        fp = backend.sum(pr, axis=axes) - tp
+        fn = backend.sum(gt, axis=axes) - tp
+
+        score = ((1 + beta ** 2) * tp + smooth) \
+                / ((1 + beta ** 2) * tp + beta ** 2 * fn + fp + smooth)
+        score = average(score, per_image, class_weights, **kwargs)
+
+        return score
+
+
+    def dice_loss(self, gt, pr):
+        """ Returns Dice Loss from f_score: 1-f_score
+            Args:
+            gt: ground truth mask [batchsize, height, width, classes]
+            pr: prediction mask [batchsize, height, width, classes]
+            Returns:
+            dice loss as tensor
+        """
+        return 1 - f_score(gt, pr, class_weights=np.array([0.5, 0.5, 1.]), smooth=1.0)
 
     def cce_loss(self, y_true, y_pred):
         """ Returns categorical crossentropy loss
@@ -198,7 +242,7 @@ class Model():
         """
         return tf.keras.losses.categorical_crossentropy(y_true, y_pred, label_smoothing=0.3)
 
-    def dice_cce_loss(self, y_true, y_pred, dice_weight=1., cce_weight=1.):
+    def dice_cce_loss(self, gt, pr, dice_weight=1., cce_weight=1.):
         """ Combines categorical crossentropy and dice loss
             Args:
             gt: ground truth mask [batchsize, height, width, classes]
@@ -208,8 +252,7 @@ class Model():
             Returns:
             combination of dice and categorical crossentropy loss as tensor
         """
-        return dice_weight * self.dice_loss(y_true, y_pred) + cce_weight * tf.nn.sigmoid_cross_entropy_with_logits(
-            y_true, y_pred)
+        return dice_weight * self.dice_loss(gt, pr) + cce_weight * self.cce_loss(gt, pr)
 
 
 class Train(Model):
@@ -221,7 +264,7 @@ class Train(Model):
         self._learning_rate_schedule = tf.keras.callbacks.LearningRateScheduler(StepDecay(initAlpha=0.0002, factor=0.3,
                                                                                           dropEvery=20))
         self._model_checkpoint = tf.keras.callbacks.ModelCheckpoint('models/best_{}.h5'.format(Config.backbone_name),
-                                                                    monitor='val_my_dice_metric_foreground',
+                                                                    monitor='val_my_dice_metric_all',
                                                                     mode='max', save_best_only=True, verbose=1)
         self._tensorboard_log = tf.keras.callbacks.TensorBoard(log_dir='../logs', histogram_freq=1, write_graph=True,
                                                                write_images=True, update_freq='epoch', profile_batch=2,
@@ -237,7 +280,7 @@ class Train(Model):
     def fit(self, train_set_size):
         model_history = self.model.fit(self.train_set.map(self.unindex).repeat(),
                                        epochs=Config.train_epochs,
-                                       steps_per_epoch=(train_set_size // Config.batch_size)//2,
+                                       steps_per_epoch=(train_set_size // Config.batch_size),
                                        validation_steps=None,
                                        validation_data=self.val_set.map(self.unindex),
                                        callbacks=[self._learning_rate_schedule,
@@ -248,8 +291,8 @@ class Train(Model):
 
     def _compile_model(self):
         self.model.compile(optimizer=tf.keras.optimizers.Adam(),
-                           loss=self.jaccard_distance_loss,
-                           metrics=[self.my_dice_metric_foreground])
+                           loss=self.dice_cce_loss,
+                           metrics=[self.dice_loss])
 
 
 class Predict(Model):
