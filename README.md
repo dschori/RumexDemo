@@ -4,7 +4,7 @@
 
 **Structure:**
 
-Data has to be place like:
+Data has to be placed like:
 ```
 RumexDemo
 │
