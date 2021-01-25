@@ -14,12 +14,14 @@ RumexDemo
 │   │   ...
 │   
 └───masks
-│   │   msk_1000.png
-│   │   msk_1001.png
+│   │   img_1000.png
+│   │   img_1001.png
 │   │   ...
 ```
 
 ## Training
+
+Training Notebook: [Training.ipynb](https://github.com/dschori/RumexDemo/blob/master/Training.ipynb)
 
 ### Config
 
@@ -27,12 +29,16 @@ Configs can be made in [config.py](config.py)
 
 ## Inference
 
-TODO...
+Simple Inference: [Inference.ipynb](https://github.com/dschori/RumexDemo/blob/master/Inference.ipynb)
 
-## Docker Commands
+## Docker
+
+Image hosted on: https://hub.docker.com/r/dschori/rumex_demo
 
 **Build:**  
 `docker build -t dschori/rumex_demo:latest -f Dockerfile .`
 
 **Run**  
-`docker run -it -p 8888:8888 -p 6006:6006 dschori/rumex_demo:latest bash`
+killer machine command:  
+
+`docker run --rm -ti -e NVIDIA_VISIBLE_DEVICES=15 -p 8884:8888 -p 8888:6006 -v /mnt/data/dschori/rumex-workspace/RumexDemo/:/workspace/RumexDemo/data dschori/rumex_demo:latest bash`
