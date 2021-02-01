@@ -1,8 +1,7 @@
 # Dockerfile for RumexDemo U-Net training
-# Based on the tensorflow docker image
 # created by Damian Schori
 
-FROM tensorflow/tensorflow:2.4.0-gpu-jupyter
+FROM pytorch/pytorch:1.7.1-cuda11.0-cudnn8-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -13,7 +12,8 @@ RUN apt update && \
 # install python packages
 RUN pip install scikit-learn && \
     pip install pandas && \
-    pip install seaborn
+    pip install seaborn && \
+    pip install albumentations
 
 # clone git project
 RUN mkdir -p /workspace
