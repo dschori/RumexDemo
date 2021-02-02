@@ -25,7 +25,7 @@ Training Notebook: [Training.ipynb](https://github.com/dschori/RumexDemo/blob/ma
 
 ### Config
 
-Configs can be made in [config.py](config.py)
+Configs can be made in [config.py](utils/config.py)
 
 ## Inference
 
