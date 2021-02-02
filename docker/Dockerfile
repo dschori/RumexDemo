@@ -15,4 +15,6 @@ RUN pip install scikit-learn && \
     pip install pandas && \
     pip install seaborn && \
     pip install albumentations && \
-    pip install jupyterlab
+    pip install jupyterlab && \
+    pip install segmentation_models_pytorch && \
+    pip install ipywidgets

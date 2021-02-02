@@ -75,8 +75,8 @@ with open(args.json_path) as f:
         background[indices] = 0
         msks[:, :, 2] = background
 
-        Path('{}/{}'.format(args.output_mask_path, label_name)).mkdir(parents=True, exist_ok=True)
-        save_image(path='{}/{}/{}{}'.format(args.output_mask_path, label_name, image_name, image_ext), img=msks)
+        Path('{}'.format(args.output_mask_path)).mkdir(parents=True, exist_ok=True)
+        save_image(path='{}/{}{}'.format(args.output_mask_path, image_name, image_ext), img=msks)
 
 
-print('Finished, stored Masks in: {}'.format(args.output_mask_path))
+print('Finished')
