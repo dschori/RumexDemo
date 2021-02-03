@@ -23,17 +23,16 @@ RumexDemo
 
 Training Notebook: [Training.ipynb](https://github.com/dschori/RumexDemo/blob/master/Training.ipynb)
 
-### Config
+### Test Image Results:
 
-Configs can be made in [config.py](config.py)
+- Purple: Detected Rumex
+- Pink: Detected Garbage
 
-## Inference
-
-Simple Inference: [Inference.ipynb](https://github.com/dschori/RumexDemo/blob/master/Inference.ipynb)
+![Dockerfile](https://github.com/dschori/RumexDemo/blob/master/docker/Dockerfile)
 
 ## Docker
 
-Image hosted on: https://hub.docker.com/r/dschori/rumex_demo
+Dockerfile: [Dockerfile](https://github.com/dschori/RumexDemo/blob/master/docker/Dockerfile)
 
 **Build:**  
 `docker build -t dschori/rumex_demo:latest -f Dockerfile .`

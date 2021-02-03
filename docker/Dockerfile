@@ -1,23 +1,20 @@
 # Dockerfile for RumexDemo U-Net training
-# Based on the tensorflow docker image
 # created by Damian Schori
 
-FROM tensorflow/tensorflow:2.4.0-gpu-jupyter
+FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # install openc-cv
 RUN apt update && \
-    apt install -y python3-opencv
+    apt install -y python3-opencv %% \
+    apt install -y git
 
 # install python packages
 RUN pip install scikit-learn && \
     pip install pandas && \
-    pip install seaborn
-
-# clone git project
-RUN mkdir -p /workspace
-WORKDIR /workspace
-RUN git clone https://github.com/dschori/RumexDemo.git
-
-WORKDIR /workspace/RumexDemo
+    pip install seaborn && \
+    pip install albumentations && \
+    pip install jupyterlab && \
+    pip install segmentation_models_pytorch && \
+    pip install ipywidgets
