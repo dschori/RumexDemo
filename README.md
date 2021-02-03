@@ -1,6 +1,18 @@
 # Rumex Demo
 
-## Data
+## Training
+
+Training Notebook: [Training.ipynb](https://github.com/dschori/RumexDemo/blob/master/Training.ipynb)
+
+### Test Image Results:
+
+- **Purple:** Detected Rumex
+- **Pink:** Detected Garbage
+
+![Test Image 1](https://github.com/dschori/RumexDemo/blob/master/data/test1.PNG)
+![Test Image 2](https://github.com/dschori/RumexDemo/blob/master/data/test2.PNG)
+
+### Data
 
 **Structure:**
 
@@ -18,18 +30,6 @@ RumexDemo
 │   │   img_1001.png
 │   │   ...
 ```
-
-## Training
-
-Training Notebook: [Training.ipynb](https://github.com/dschori/RumexDemo/blob/master/Training.ipynb)
-
-### Test Image Results:
-
-- **Purple:** Detected Rumex
-- **Pink:** Detected Garbage
-
-![Test Image 1](https://github.com/dschori/RumexDemo/blob/master/data/test1.PNG)
-![Test Image 2](https://github.com/dschori/RumexDemo/blob/master/data/test2.PNG)
 
 ## Inference
 
