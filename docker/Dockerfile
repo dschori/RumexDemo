@@ -1,5 +1,4 @@
 # Dockerfile for RumexDemo U-Net training
-# created by Damian Schori
 
 FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-runtime
 
