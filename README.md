@@ -33,6 +33,8 @@ Training Notebook: [Training.ipynb](https://github.com/dschori/RumexDemo/blob/ma
 
 ## Inference
 
+**Trained Model:** [PyTorch Model](https://github.com/dschori/RumexDemo/tree/master/models/best_model.pth)
+
 For Inference, the **image** has to be in shape **[Channels, Height, Width] -> [3, 768, 768]**  
 
 Model returns for each image a **mask** in shape **[2, 768, 768]** -> first channel is rumex, second is garbage
