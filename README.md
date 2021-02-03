@@ -25,10 +25,11 @@ Training Notebook: [Training.ipynb](https://github.com/dschori/RumexDemo/blob/ma
 
 ### Test Image Results:
 
-- Purple: Detected Rumex
-- Pink: Detected Garbage
+- **Purple: Detected Rumex**
+- **Pink: Detected Garbage**
 
-![Dockerfile](https://github.com/dschori/RumexDemo/blob/master/docker/Dockerfile)
+![Test Image 1](https://github.com/dschori/RumexDemo/blob/master/data/test1.PNG)
+![Test Image 2](https://github.com/dschori/RumexDemo/blob/master/data/test2.PNG)
 
 ## Docker
 
