@@ -35,9 +35,9 @@ RumexDemo
 
 **Trained Model:** [PyTorch Model](https://github.com/dschori/RumexDemo/tree/master/models/best_model.pth)
 
-For Inference, the **image** has to be in shape **[Channels, Height, Width] -> [3, 768, 768]**  
+For Inference, the **image** has to be in shape **[Channels, Height, Width] -> [3, 768, 768]**  Data Type: np.uint8, 0..255
 
-Model returns for each image a **mask** in shape **[2, 768, 768]** -> first channel is rumex, second is garbage
+Model returns for each image a **mask** in shape **[2, 768, 768]** -> first channel is rumex, second is garbage, DataType: np.float32, 0.0 .. 1.0
 
 For Example:  
 
