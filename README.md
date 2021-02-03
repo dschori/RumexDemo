@@ -25,17 +25,17 @@ Training Notebook: [Training.ipynb](https://github.com/dschori/RumexDemo/blob/ma
 
 ### Test Image Results:
 
-- **Purple: Detected Rumex**
-- **Pink: Detected Garbage**
+- **Purple:** Detected Rumex
+- **Pink:** Detected Garbage
 
 ![Test Image 1](https://github.com/dschori/RumexDemo/blob/master/data/test1.PNG)
 ![Test Image 2](https://github.com/dschori/RumexDemo/blob/master/data/test2.PNG)
 
 ## Inference
 
-For Inference, the image has to be in shape [Channels, Height, Width] -> [3, 768, 768]  
+For Inference, the **image** has to be in shape **[Channels, Height, Width] -> [3, 768, 768]**  
 
-Model returns for each image a mask in shape [2, 768, 768] -> first channel is rumex, second is garbage
+Model returns for each image a **mask** in shape **[2, 768, 768]** -> first channel is rumex, second is garbage
 
 For Example:  
 
@@ -49,7 +49,6 @@ def torch_tensor_to_image(tensor):
 tensor = image_to_torch_tensor(image_as_numpy)
 pr_mask_as_tensor = model.predict(tensor)
 pr_mask_as_numpy = torch_tensor_to_image(pr_mask_as_tensor)
-
 ```
 
 ## Docker
