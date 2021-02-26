@@ -68,4 +68,6 @@ Dockerfile: [Dockerfile](https://github.com/dschori/RumexDemo/blob/master/docker
 **Run**  
 killer machine command:  
 
-`docker run --rm -ti -e NVIDIA_VISIBLE_DEVICES=15 -p 8884:8888 -p 8888:6006 -v /mnt/data/dschori/rumex-workspace/RumexDemo/:/workspace/RumexDemo/data dschori/rumex_demo:latest bash`
+`docker run --rm -ti -e NVIDIA_VISIBLE_DEVICES=15 -p 8884:8888 -p 8888:6006 -v /mnt/data/dschori/rumex-workspace/RumexDemo/:/workspace/RumexDemo/data dschori/rumex_demo:latest bash`  
+
+'jupyter notebook --ip 0.0.0.0 --port 8888 --allow-root'
