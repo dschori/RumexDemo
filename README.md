@@ -4,6 +4,11 @@
 
 Training Notebook: [Training.ipynb](https://github.com/dschori/RumexDemo/blob/master/Training.ipynb)
 
+### Data
+
+Train: https://drive.switch.ch/index.php/s/Nu0IWNZJIFhEJMo  
+Test: https://drive.switch.ch/index.php/s/PeqpbGNg6s81B9e
+
 ### Test Image Results:
 
 - **Purple:** Detected Rumex
