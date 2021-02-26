@@ -7,7 +7,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 # install openc-cv
 RUN apt update && \
     apt install -y python3-opencv %% \
-    apt install -y git
+    apt install -y git && \
+    apt install -y wget && \
+    apt install -y unzip
 
 # install python packages
 RUN pip install scikit-learn && \
